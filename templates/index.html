@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeatherNow - Weather Tracking</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(to bottom, #87CEEB, #1E90FF);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px 0;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        .weather-card {
+            transition: transform 0.3s;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .weather-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        .city-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .temperature {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 10px 0;
+        }
+        .weather-icon {
+            font-size: 3rem;
+            margin: 10px 0;
+        }
+        .humidity {
+            color: #3498db;
+            font-size: 1.1rem;
+            margin: 5px 0;
+        }
+        .description {
+            color: #7f8c8d;
+            font-size: 1.2rem;
+            margin: 5px 0;
+        }
+        .timestamp {
+            color: #95a5a6;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #2c3e50;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+        .table {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .table thead th {
+            background: #3498db;
+            color: white;
+            border: none;
+        }
+        .table tbody tr:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <h1 class="text-center mb-5">WeatherNow</h1>
+        
+        <div class="row" id="weather-cards">
+            <!-- Weather cards will be dynamically inserted here -->
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-12">
+                <h2 class="mb-4">history</h2>
+                <div class="table-responsive">
+                    <table class="table table-striped" id="history-table">
+                        <thead>
+                            <tr>
+                                <th>City</th>
+                                <th>Date</th>
+                                <th>Temperature (°C)</th>
+                                <th>Humidity (%)</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Historical data will be dynamically inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateWeather() {
+            fetch('/api/weather')
+                .then(response => response.json())
+                .then(data => {
+                    const cardsContainer = document.getElementById('weather-cards');
+                    cardsContainer.innerHTML = '';
+                    
+                    Object.entries(data).forEach(([city, weather]) => {
+                        const card = document.createElement('div');
+                        card.className = 'col-md-4';
+                        card.innerHTML = `
+                            <div class="card weather-card">
+                                <div class="card-body text-center">
+                                    <div class="city-name">${city}</div>
+                                    <div class="weather-icon">🌤️</div>
+                                    <div class="temperature">${weather.temperature}°C</div>
+                                    <div class="humidity">Humidity: ${weather.humidity}%</div>
+                                    <div class="description">${weather.description}</div>
+                                    <div class="timestamp">Last updated: ${weather.timestamp}</div>
+                                </div>
+                            </div>
+                        `;
+                        cardsContainer.appendChild(card);
+                    });
+                });
+        }
+
+        function updateHistory() {
+            const cities = {{ cities|tojson }};
+            const tableBody = document.querySelector('#history-table tbody');
+            tableBody.innerHTML = '';
+
+            cities.forEach(city => {
+                fetch(`/api/history/${city}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(record => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${city}</td>
+                                <td>${record.timestamp}</td>
+                                <td>${record.temperature}°C</td>
+                                <td>${record.humidity}%</td>
+                                <td>${record.description}</td>
+                            `;
+                            tableBody.appendChild(row);
+                        });
+                    });
+            });
+        }
+
+        // Update weather data every 5 minutes
+        updateWeather();
+        updateHistory();
+        setInterval(updateWeather, 300000);
+        setInterval(updateHistory, 300000);
+    </script>
+</body>
+</html> 

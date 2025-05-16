@@ -1,0 +1,18 @@
+# Python virtual environment
+venv/
+
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+
+# Environment variables
+.env
+
+# Flask instance folder
+instance/
+
+# SQLite DB or other local files
+*.sqlite3
+
+# VS Code settings (optional)
+.vscode/
