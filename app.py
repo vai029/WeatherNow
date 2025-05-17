@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 import requests
@@ -27,7 +27,7 @@ class WeatherData(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 # List of cities to track
-CITIES = ['New York', 'London', 'Tokyo', 'Sydney', 'Paris']
+CITIES = ['Mumbai', 'London', 'Delhi', 'Sydney', 'Paris']
 
 def fetch_weather_data(city):
     """Fetch weather data from OpenWeatherMap API"""
@@ -95,13 +95,40 @@ def get_history(city):
     if city not in CITIES:
         return jsonify({'error': 'City not found'}), 404
     
-    history = WeatherData.query.filter_by(city=city).order_by(WeatherData.timestamp.desc()).limit(10).all()
+    # Get date filter from query parameters
+    date_filter = request.args.get('date')
+    
+    query = WeatherData.query.filter_by(city=city)
+    
+    if date_filter:
+        try:
+            filter_date = datetime.strptime(date_filter, '%Y-%m-%d')
+            next_day = filter_date + timedelta(days=1)
+            query = query.filter(
+                WeatherData.timestamp >= filter_date,
+                WeatherData.timestamp < next_day
+            )
+        except ValueError:
+            return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+    
+    history = query.order_by(WeatherData.timestamp.desc()).limit(10).all()
     return jsonify([{
         'temperature': record.temperature,
         'humidity': record.humidity,
         'description': record.description,
         'timestamp': record.timestamp.strftime('%Y-%m-%d %H:%M:%S')
     } for record in history])
+
+@app.route('/api/dates')
+def get_available_dates():
+    """API endpoint to get all available dates in the database"""
+    dates = db.session.query(
+        db.func.date(WeatherData.timestamp)
+    ).distinct().order_by(
+        db.func.date(WeatherData.timestamp).desc()
+    ).all()
+    
+    return jsonify([date[0].strftime('%Y-%m-%d') for date in dates])
 
 if __name__ == '__main__':
     with app.app_context():

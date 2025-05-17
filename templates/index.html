@@ -96,7 +96,25 @@
 
         <div class="row mt-5">
             <div class="col-12">
-                <h2 class="mb-4">history</h2>
+                <h2 class="mb-4">Weather History</h2>
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <select class="form-select" id="city-select">
+                            <option value="">Select City</option>
+                            {% for city in cities %}
+                            <option value="{{ city }}">{{ city }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select" id="date-select">
+                            <option value="">Select Date</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-primary" onclick="filterHistory()">Filter</button>
+                    </div>
+                </div>
                 <div class="table-responsive">
                     <table class="table table-striped" id="history-table">
                         <thead>
@@ -145,35 +163,63 @@
                 });
         }
 
-        function updateHistory() {
-            const cities = {{ cities|tojson }};
+        function loadAvailableDates() {
+            fetch('/api/dates')
+                .then(response => response.json())
+                .then(dates => {
+                    const dateSelect = document.getElementById('date-select');
+                    dateSelect.innerHTML = '<option value="">Select Date</option>';
+                    dates.forEach(date => {
+                        const option = document.createElement('option');
+                        option.value = date;
+                        option.textContent = date;
+                        dateSelect.appendChild(option);
+                    });
+                });
+        }
+
+        function filterHistory() {
+            const selectedCity = document.getElementById('city-select').value;
+            const selectedDate = document.getElementById('date-select').value;
+            
+            if (!selectedCity) {
+                alert('Please select a city');
+                return;
+            }
+
             const tableBody = document.querySelector('#history-table tbody');
             tableBody.innerHTML = '';
 
-            cities.forEach(city => {
-                fetch(`/api/history/${city}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        data.forEach(record => {
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                                <td>${city}</td>
-                                <td>${record.timestamp}</td>
-                                <td>${record.temperature}°C</td>
-                                <td>${record.humidity}%</td>
-                                <td>${record.description}</td>
-                            `;
-                            tableBody.appendChild(row);
-                        });
+            let url = `/api/history/${selectedCity}`;
+            if (selectedDate) {
+                url += `?date=${selectedDate}`;
+            }
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    data.forEach(record => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${selectedCity}</td>
+                            <td>${record.timestamp}</td>
+                            <td>${record.temperature}°C</td>
+                            <td>${record.humidity}%</td>
+                            <td>${record.description}</td>
+                        `;
+                        tableBody.appendChild(row);
                     });
-            });
+                });
         }
 
         // Update weather data every 5 minutes
         updateWeather();
-        updateHistory();
+        loadAvailableDates();
         setInterval(updateWeather, 300000);
-        setInterval(updateHistory, 300000);
     </script>
 </body>
 </html> 
