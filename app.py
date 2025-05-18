@@ -69,6 +69,15 @@ def update_weather_data():
     
     db.session.commit()
 
+def delete_old_weather_data():
+    """Delete weather data older than the current month"""
+    current_date = datetime.utcnow()
+    first_day_of_month = current_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    # Delete all records older than the first day of current month
+    WeatherData.query.filter(WeatherData.timestamp < first_day_of_month).delete()
+    db.session.commit()
+
 @app.route('/')
 def index():
     """Render the main page"""
@@ -111,7 +120,8 @@ def get_history(city):
         except ValueError:
             return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
     
-    history = query.order_by(WeatherData.timestamp.desc()).limit(10).all()
+    # Remove the limit(10) to get all records for the current month
+    history = query.order_by(WeatherData.timestamp.desc()).all()
     return jsonify([{
         'temperature': record.temperature,
         'humidity': record.humidity,
@@ -135,4 +145,6 @@ if __name__ == '__main__':
         db.create_all()
         # Update weather data on startup
         update_weather_data()
+        # Delete old weather data on startup
+        delete_old_weather_data()
     app.run(debug=True) 
