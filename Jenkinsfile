@@ -26,20 +26,20 @@ pipeline {
 
         stage('Setup Python Environment') {
             steps {
-                sh '''
-                    python -m venv ${VENV_NAME}
-                    . ${VENV_NAME}/bin/activate
+                bat """
+                    ${PYTHON_PATH} -m venv ${VENV_NAME}
+                    call ${VENV_NAME}\\Scripts\\activate
                     pip install -r requirements.txt
-                '''
+                """
             }
         }
 
         stage('Collect Weather Data') {
             steps {
-                sh '''
-                    . ${VENV_NAME}/bin/activate
+                bat """
+                    call ${VENV_NAME}\\Scripts\\activate
                     python app.py
-                '''
+                """
             }
         }
     }
@@ -52,9 +52,7 @@ pipeline {
             echo 'Weather data collection completed successfully!'
         }
         failure {
-            echo 'Weather data collection failed!'
+            echo 'Weather data collection failed. Check logs for errors.'
         }
     }
 }
-
-            echo 'Weather data collection failed!'
