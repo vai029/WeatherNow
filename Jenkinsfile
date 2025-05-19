@@ -22,21 +22,21 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh 'pip install -r requirements.txt'
+                bat 'pip install -r requirements.txt'
             }
         }
 
         stage('Run Script') {
             steps {
-                sh '''
-                export OPENWEATHER_API_KEY=$OPENWEATHER_API_KEY
-                export MYSQL_USER=$MYSQL_USER
-                export MYSQL_PASSWORD=$MYSQL_PASSWORD
-                export MYSQL_HOST=$MYSQL_HOST
-                export MYSQL_DATABASE=$MYSQL_DATABASE
+                bat """
+                set OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
+                set MYSQL_USER=${MYSQL_USER}
+                set MYSQL_PASSWORD=${MYSQL_PASSWORD}
+                set MYSQL_HOST=${MYSQL_HOST}
+                set MYSQL_DATABASE=${MYSQL_DATABASE}
 
                 python app.py
-                '''
+                """
             }
         }
     }
