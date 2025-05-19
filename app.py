@@ -78,6 +78,14 @@ def delete_old_weather_data():
     WeatherData.query.filter(WeatherData.timestamp < first_day_of_month).delete()
     db.session.commit()
 
+def collect_weather_data():
+    """Main function to collect weather data without starting the server"""
+    with app.app_context():
+        db.create_all()
+        update_weather_data()
+        delete_old_weather_data()
+        print("Weather data collection completed successfully!")
+
 @app.route('/')
 def index():
     """Render the main page"""
@@ -120,7 +128,6 @@ def get_history(city):
         except ValueError:
             return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
     
-    # Remove the limit(10) to get all records for the current month
     history = query.order_by(WeatherData.timestamp.desc()).all()
     return jsonify([{
         'temperature': record.temperature,
@@ -141,10 +148,11 @@ def get_available_dates():
     return jsonify([date[0].strftime('%Y-%m-%d') for date in dates])
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-        # Update weather data on startup
-        update_weather_data()
-        # Delete old weather data on startup
-        delete_old_weather_data()
-    app.run(debug=True) 
+    # Check if we're running in collection mode (for Jenkins)
+    if os.getenv('COLLECT_DATA_ONLY') == 'true':
+        collect_weather_data()
+    else:
+        # Normal server mode
+        with app.app_context():
+            db.create_all()
+        app.run(debug=True) 
