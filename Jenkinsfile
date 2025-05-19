@@ -2,36 +2,40 @@ pipeline {
     agent any
 
     environment {
-        OPENWEATHER_API_KEY = credentials('3aab362b4c66a414562d31fcdc08d614')
-        MYSQL_USER = credentials('root')
-        MYSQL_PASSWORD = credentials('292002')
-        MYSQL_HOST = credentials('localhost')
-        MYSQL_DATABASE = credentials('weather_db')
+        OPENWEATHER_API_KEY = '3aab362b4c66a414562d31fcdc08d614'
+        MYSQL_USER = 'root'
+        MYSQL_PASSWORD = '292002'
+        MYSQL_HOST = 'localhost'
+        MYSQL_DATABASE = 'weather_db'
     }
 
-    
     triggers {
-        cron('H 1 * * *')  // 🔁 Triggers the job daily at 1 AM (H = hash for load balancing)
+        cron('H 1 * * *') // Runs daily at 1 AM
     }
 
     stages {
-        stage('Setup Environment') {
+        stage('Clone Repo') {
             steps {
-                sh '''
-                    python3 -m venv venv
-                    source venv/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
-                '''
+                checkout scm
             }
         }
 
-        stage('Run Flask App') {
+        stage('Install Dependencies') {
+            steps {
+                sh 'pip install -r requirements.txt'
+            }
+        }
+
+        stage('Run Script') {
             steps {
                 sh '''
-                    source venv/bin/activate
-                    export FLASK_APP=app.py
-                    flask run --host=0.0.0.0 --port=5000
+                export OPENWEATHER_API_KEY=$OPENWEATHER_API_KEY
+                export MYSQL_USER=$MYSQL_USER
+                export MYSQL_PASSWORD=$MYSQL_PASSWORD
+                export MYSQL_HOST=$MYSQL_HOST
+                export MYSQL_DATABASE=$MYSQL_DATABASE
+
+                python app.py
                 '''
             }
         }
