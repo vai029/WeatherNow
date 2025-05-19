@@ -7,6 +7,7 @@ pipeline {
         MYSQL_PASSWORD = '292002'
         MYSQL_HOST = 'localhost'
         MYSQL_DATABASE = 'weather_db'
+        PYTHON_PATH = 'C:\\Users\\KIIT\\AppData\\Local\\Programs\\Python\\Python38\\python.exe'
     }
 
     triggers {
@@ -22,20 +23,20 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                bat 'python -m pip install -r requirements.txt'
+                bat '"%PYTHON_PATH%" -m pip install -r requirements.txt'
             }
         }
 
         stage('Run Script') {
             steps {
                 bat """
-                set OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
-                set MYSQL_USER=${MYSQL_USER}
-                set MYSQL_PASSWORD=${MYSQL_PASSWORD}
-                set MYSQL_HOST=${MYSQL_HOST}
-                set MYSQL_DATABASE=${MYSQL_DATABASE}
+                set OPENWEATHER_API_KEY=%OPENWEATHER_API_KEY%
+                set MYSQL_USER=%MYSQL_USER%
+                set MYSQL_PASSWORD=%MYSQL_PASSWORD%
+                set MYSQL_HOST=%MYSQL_HOST%
+                set MYSQL_DATABASE=%MYSQL_DATABASE%
 
-                python app.py
+                "%PYTHON_PATH%" app.py
                 """
             }
         }
